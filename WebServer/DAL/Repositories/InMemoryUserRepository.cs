@@ -1,38 +1,48 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Identity;
+using WebServer.DAL.Repositories.Abstractions;
 
 namespace WebServer.DAL.Repositories;
 
 public class InMemoryUserRepository : IUserRepository
 {
-    private ConcurrentDictionary<int, User> _users = new ConcurrentDictionary<int, User>();
+    private readonly ConcurrentDictionary<int, User> _users = new ConcurrentDictionary<int, User>();
     private readonly IPasswordHasher<User> _passwordHasher;
-    private int _nextId = -1;
+    private int currentId = 0;
 
     public InMemoryUserRepository(IPasswordHasher<User> passwordHasher)
     {
         _passwordHasher = passwordHasher;
-        Create(new CreateUserDTO
+        Create(new CreateUserDto
         {
             Username = "root",
             Password = "root",
+        });
+        Patch(0, new PatchUserDto
+        {
             UserRole = Role.Admin
         });
     }
     
-    public int Create(CreateUserDTO createUserDto)
+    public int Create(CreateUserDto createUserDto)
     {
-        User user = new User()
+        User user = new User
         {
             Username = createUserDto.Username,
-            UserRole = createUserDto.UserRole,
+            UserRole = Role.User,
         };
+
+        if (_users.Any(pair => pair.Value.Username == user.Username))
+        {
+            return -1;
+        }
+            
         user.PasswordHash = _passwordHasher.HashPassword(user, createUserDto.Password);
         
-        bool result = _users.TryAdd(_nextId++, user);
+        bool result = _users.TryAdd(currentId++, user);
         if (result)
         {
-            return _nextId;
+            return currentId - 1;
         }
 
         return -1;
@@ -54,14 +64,14 @@ public class InMemoryUserRepository : IUserRepository
         return _users.ToDictionary(u => u.Key, u => u.Value);
     }
 
-    public bool Update(int id, User user)
+    public bool Patch(int id, PatchUserDto patchUser)
     {
         if (!_users.ContainsKey(id))
         {
             return false;
         }
         
-        _users[id] = user;
+        _users[id].UserRole = patchUser.UserRole;
         return true;
     }
 
@@ -73,5 +83,16 @@ public class InMemoryUserRepository : IUserRepository
         }
         
         return _users.TryRemove(id, out _);
+    }
+
+    public bool ValidatePassword(string username, string password)
+    {
+        User? user = GetByUsername(username);
+        if (user == null)
+        {
+            return false;
+        }
+        
+        return user.PasswordHash == _passwordHasher.HashPassword(user, password);
     }
 }
