@@ -27,5 +27,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
+          context: ./WebServer
+          file: ./WebServer/Dockerfile
           push: true
           tags: ${{ vars.DOCKERHUB_USERNAME }}/aspapp:latest
