@@ -1,6 +1,4 @@
-﻿using System.Net;
-using System.Text.Json;
-using ConsoleClient.Services.Abstractions;
+﻿using ConsoleClient.Services.Abstractions;
 using ConsoleClient.Services.DTOs;
 using Spectre.Console;
 
@@ -31,6 +29,7 @@ public class ClientController
                     (2, "Get user by id"),
                     (3, "Update user"),
                     (4, "Delete user"),
+                    (5, "Exit"),
                 }));
 
             AnsiConsole.Clear();
@@ -47,9 +46,13 @@ public class ClientController
                     GetUserById();
                     break;
                 case 3:
+                    UpdateUser();
                     break;
                 case 4:
+                    DeleteUser();
                     break;
+                case 5:
+                    return;
             }
         }
     }
@@ -112,7 +115,7 @@ public class ClientController
         string basicAuthToken = _base64Encoder.Encode(input.Item1 + ":" + input.Item2);
         
         AnsiConsole.Status()
-            .Spinner(Spinner.Known.Aesthetic)
+            .Spinner(Spinner.Known.Dots)
             .Start("Sending request...", ctx =>
             {
                 try
@@ -139,7 +142,8 @@ public class ClientController
 
     private void GetUserById()
     {
-        int usernameId = AnsiConsole.Prompt(new TextPrompt<int>("Username id:")
+        AnsiConsole.MarkupLine("Get user by id");
+        int userId = AnsiConsole.Prompt(new TextPrompt<int>("User id:")
             .Validate(id =>
             {
                 if (id < 1)
@@ -155,20 +159,113 @@ public class ClientController
         string basicAuthToken = _base64Encoder.Encode(input.Item1 + ":" + input.Item2);
         
         AnsiConsole.Status()
-            .Spinner(Spinner.Known.Aesthetic)
+            .Spinner(Spinner.Known.Dots)
             .Start("Sending request...", ctx =>
             {
                 try
                 {
-                    UserDto? user = _userService.GetUserById(basicAuthToken, usernameId);
+                    UserDto? user = _userService.GetUserById(basicAuthToken, userId);
                     if (user is not null)
                     {
-                        AnsiConsole.MarkupLine($"[green]Success! User: {user.Username}[/]");
+                        AnsiConsole.MarkupLine($"[green]Success! {user}[/]");
                     }
                 }
                 catch (HttpRequestException e)
                 {
                     AnsiConsole.MarkupLine($"[red]Error! {e.StatusCode}[/]");
+                }
+            });
+    }
+
+    private void UpdateUser()
+    {
+        AnsiConsole.MarkupLine("Update user by id");
+        int userId = AnsiConsole.Prompt(new TextPrompt<int>("User id:")
+            .Validate(id =>
+            {
+                if (id < 1)
+                {
+                    return ValidationResult.Error("Too short");
+                }
+                
+                return ValidationResult.Success();
+            }));
+        
+        AnsiConsole.MarkupLine("Select new Role for user");
+        (int,string) selection = AnsiConsole.Prompt(new SelectionPrompt<(int, string)>()
+            .AddChoices(new []
+            {
+                (0, "Admin"),
+                (1, "User"),
+            }));
+        
+        int role = selection.Item1;
+        
+        AnsiConsole.MarkupLine("Authorize");
+        Tuple<string, string> input = InputAuthData();
+        string basicAuthToken = _base64Encoder.Encode(input.Item1 + ":" + input.Item2);
+        
+        AnsiConsole.Status()
+            .Spinner(Spinner.Known.Dots)
+            .Start("Sending request...", ctx =>
+            {
+                try
+                {
+                    PatchUserDto patchUser = new PatchUserDto
+                    {
+                        Role = role,
+                    };
+                    int id = _userService.PatchUser(basicAuthToken, userId, patchUser);
+                    if (id < 0)
+                    {
+                        throw new Exception("Server error");
+                    }
+                }
+                catch (HttpRequestException e)
+                {
+                    AnsiConsole.MarkupLine($"[red]Error! {e.StatusCode}[/]");
+                }
+                catch (Exception e)
+                {
+                    AnsiConsole.MarkupLine($"[red]Error! {e.Message}[/]");
+                }
+            });
+    }
+    
+    
+    private void DeleteUser()
+    {
+        AnsiConsole.MarkupLine("Delete user");
+        int userId = AnsiConsole.Prompt(new TextPrompt<int>("User id:")
+            .Validate(id =>
+            {
+                if (id < 1)
+                {
+                    return ValidationResult.Error("Too short");
+                }
+                
+                return ValidationResult.Success();
+            }));
+        
+        AnsiConsole.MarkupLine("Authorize");
+        Tuple<string, string> input = InputAuthData();
+        string basicAuthToken = _base64Encoder.Encode(input.Item1 + ":" + input.Item2);
+        
+        AnsiConsole.Status()
+            .Spinner(Spinner.Known.Dots)
+            .Start("Sending request...", ctx =>
+            {
+                try
+                {
+                    _userService.DeleteUser(basicAuthToken, userId);
+                }
+                catch (HttpRequestException e)
+                {
+                    AnsiConsole.MarkupLine($"[red]Error! {e.StatusCode}[/]");
+                }
+                catch (Exception e)
+                {
+                    AnsiConsole.MarkupLine($"[red]Error! {e.Message}[/]");
                 }
             });
     }

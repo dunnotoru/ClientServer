@@ -5,18 +5,14 @@ using ConsoleClient.Services.DTOs;
 
 namespace ConsoleClient.Services;
 
-public class UserService : IUserService
+public class UserService(IPEndPoint endpoint) : IUserService
 {
-    private readonly HttpClient _client;
-    
-    public UserService(IPEndPoint endpoint)
+    private readonly HttpClient _client = new HttpClient
     {
-        _client = new HttpClient
-        {
-            BaseAddress = new Uri($"http://{endpoint.Address}:{endpoint.Port}/api/", UriKind.Absolute)
-        };
-    }
-    
+        BaseAddress = new Uri($"http://{endpoint.Address}:{endpoint.Port}/api/", UriKind.Absolute),
+        Timeout = TimeSpan.FromSeconds(30)
+    };
+
     public int Create(CreateUserDto createUserDto)
     {
         JsonContent content = JsonContent.Create(new
@@ -32,7 +28,7 @@ public class UserService : IUserService
             Content = content
         };
         
-        HttpResponseMessage response = _client.Send(request);
+        HttpResponseMessage response = _client.Send(request, new CancellationToken());
         response.EnsureSuccessStatusCode();
         CreatedResponseDto? a = response.Content.ReadFromJsonAsync<CreatedResponseDto>().Result;
         return a?.Id ?? -1;
