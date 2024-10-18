@@ -1,4 +1,6 @@
-﻿namespace WebServer.DAL.Repositories.Abstractions;
+﻿using WebServer.DAL.DTOs;
+
+namespace WebServer.DAL.Repositories.Abstractions;
 
 public interface IUserRepository
 {

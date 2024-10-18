@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using WebServer.DAL;
+using WebServer.DAL.DTOs;
 using WebServer.DAL.Repositories.Abstractions;
 using WebServer.Services.Abstractions;
 
@@ -33,7 +34,9 @@ public class UserController : ControllerBase
     }
 
     [HttpPatch("{id:int}")]
-    public IActionResult Patch(int id, [FromBody] PatchUserDto patchDoc, [FromHeader] string? authHeader)
+    public IActionResult Patch(int id,
+        [FromBody] PatchUserDto patchUserDto,
+        [FromHeader(Name = "Authorization")] string? authHeader)
     {
         IActionResult? result = AuthorizeAdmin(authHeader);
         if (result is not null)
@@ -47,7 +50,7 @@ public class UserController : ControllerBase
             return NotFound();
         }
 
-        if (_userRepository.Patch(id, patchDoc))
+        if (_userRepository.Patch(id, patchUserDto))
         {
             return Problem();
         }
@@ -67,11 +70,16 @@ public class UserController : ControllerBase
             return result;
         }
         
-        Dictionary<int, User> users =  _userRepository.GetUsers();
-        return Ok(new
-        {
-            Users = users
-        });
+        Dictionary<int, ResponseUserDto> users =  _userRepository.GetUsers().Select(pair =>
+            {
+                return new KeyValuePair<int, ResponseUserDto>(pair.Key, new ResponseUserDto
+                {
+                    Username = pair.Value.Username,
+                    UserRole = pair.Value.UserRole,
+                });
+            })
+        .ToDictionary();
+        return Ok(users);
     }
 
     [HttpGet("{id:int}")]

@@ -1,4 +1,4 @@
-﻿namespace WebServer.DAL;
+﻿namespace WebServer.DAL.DTOs;
 
 public class PatchUserDto
 {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using Microsoft.AspNetCore.Identity;
+using WebServer.DAL.DTOs;
 using WebServer.DAL.Repositories.Abstractions;
 
 namespace WebServer.DAL.Repositories;
