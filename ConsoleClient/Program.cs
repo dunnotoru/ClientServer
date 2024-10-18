@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Text.RegularExpressions;
 using ConsoleClient.Services;
 using Spectre.Console;
 
