@@ -10,7 +10,7 @@ public class UserService(IPEndPoint endpoint) : IUserService
     private readonly HttpClient _client = new HttpClient
     {
         BaseAddress = new Uri($"http://{endpoint.Address}:{endpoint.Port}/api/", UriKind.Absolute),
-        Timeout = TimeSpan.FromSeconds(30)
+        Timeout = TimeSpan.FromSeconds(15)
     };
 
     public int Create(CreateUserDto createUserDto)
@@ -30,7 +30,7 @@ public class UserService(IPEndPoint endpoint) : IUserService
         
         HttpResponseMessage response = _client.Send(request, new CancellationToken());
         response.EnsureSuccessStatusCode();
-        CreatedResponseDto? a = response.Content.ReadFromJsonAsync<CreatedResponseDto>().Result;
+        ResponseUserDto? a = response.Content.ReadFromJsonAsync<ResponseUserDto>().Result;
         return a?.Id ?? -1;
     }
 
@@ -43,7 +43,7 @@ public class UserService(IPEndPoint endpoint) : IUserService
             Headers = { { "Authorization", $"Basic {basicAuthToken}" } }
         };
 
-        HttpResponseMessage response = _client.SendAsync(request).Result;
+        HttpResponseMessage response = _client.Send(request);
         response.EnsureSuccessStatusCode();
         return response.Content.ReadFromJsonAsync<IDictionary<int, UserDto>>().Result ?? new Dictionary<int, UserDto>();
     }
@@ -71,7 +71,7 @@ public class UserService(IPEndPoint endpoint) : IUserService
             Headers = { { "Authorization", $"Basic {basicAuthToken}" } }
         };
                         
-        HttpResponseMessage response = _client.SendAsync(request).Result;
+        HttpResponseMessage response = _client.Send(request);
         response.EnsureSuccessStatusCode();
         return response.Content.ReadFromJsonAsync<UserDto>().Result ?? null;
     }
@@ -82,12 +82,14 @@ public class UserService(IPEndPoint endpoint) : IUserService
         {
             Method = HttpMethod.Patch,
             RequestUri = new Uri($"users/{userId}", UriKind.Relative),
-            Headers = { { "Authorization", $"Basic {basicAuthToken}" } }
+            Headers = { { "Authorization", $"Basic {basicAuthToken}" } },
+            Content = JsonContent.Create(userDto)
         };
         
-        HttpResponseMessage response = _client.SendAsync(request).Result;
+        HttpResponseMessage response = _client.Send(request);
         response.EnsureSuccessStatusCode();
-        return response.Content.ReadFromJsonAsync<int>().Result;
+        ResponseUserDto? user = response.Content.ReadFromJsonAsync<ResponseUserDto>().Result;
+        return user?.Id ?? -1;
     }
     
     public void DeleteUser(string basicAuthToken, int userId)

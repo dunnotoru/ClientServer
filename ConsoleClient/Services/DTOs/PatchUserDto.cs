@@ -2,5 +2,5 @@
 
 public class PatchUserDto
 {
-    public int Role { get; set; }
+    public int UserRole { get; set; }
 }

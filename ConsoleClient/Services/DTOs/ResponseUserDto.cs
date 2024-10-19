@@ -1,6 +1,6 @@
 ﻿namespace ConsoleClient.Services.DTOs;
 
-public class CreatedResponseDto
+public class ResponseUserDto
 {
     public int Id { get; set; }
 }

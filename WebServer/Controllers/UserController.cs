@@ -50,7 +50,7 @@ public class UserController : ControllerBase
             return NotFound();
         }
 
-        if (_userRepository.Patch(id, patchUserDto))
+        if (!_userRepository.Patch(id, patchUserDto))
         {
             return Problem();
         }

@@ -213,7 +213,7 @@ public class ClientController
                 {
                     PatchUserDto patchUser = new PatchUserDto
                     {
-                        Role = role,
+                        UserRole = role,
                     };
                     int id = _userService.PatchUser(basicAuthToken, userId, patchUser);
                     if (id < 0)
