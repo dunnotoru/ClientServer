@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using WebServer.DAL;
 using WebServer.DAL.Repositories;
@@ -9,11 +10,14 @@ namespace WebServer;
 
 public static class Program
 {
+    //dotnet run --urls "http://localhost:7777" to run with required url
+    //dotnet run --environment Production to run with prod
+    //dotnet run --launch-profile https to run profile from launch-settings (not actually important)
     public static void Main(string[] args)
     {
         WebApplicationBuilder builder = 
             WebApplication.CreateBuilder(args);
-
+        
         RegisterServices(builder.Services);
 
         WebApplication app = builder.Build();
