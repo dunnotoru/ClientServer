@@ -69,18 +69,15 @@ public class BasicAuthenticationHandler : AuthenticationHandler<BasicAuthenticat
             return await Task.FromResult(AuthenticateResult.Fail("Invalid username or password"));
         }
 
-        Claim[] claims;
-        if (storedUser.UserRole == Role.Admin)
+        Claim[] claims = new[]
         {
-            claims = [new Claim(ClaimTypes.Role, "Admin")];
-        }
-        else
-        {
-            claims = [new Claim(ClaimTypes.Role, "User")];
-        }
+            new Claim(ClaimTypes.NameIdentifier, storedUser.Username),
+            new Claim(ClaimTypes.Role, storedUser.UserRole.ToString()),
+        };
         
-        ClaimsIdentity claimsIdentity = new ClaimsIdentity(claims, BasicAuthenticationDefaults.Scheme);
-        AuthenticationTicket ticket = new AuthenticationTicket(new ClaimsPrincipal(claimsIdentity), new AuthenticationProperties(), BasicAuthenticationDefaults.Scheme);
+        ClaimsIdentity identity = new ClaimsIdentity(claims, BasicAuthenticationDefaults.Scheme);
+        ClaimsPrincipal claimsPrincipal = new ClaimsPrincipal(identity);
+        AuthenticationTicket ticket = new AuthenticationTicket(claimsPrincipal, BasicAuthenticationDefaults.Scheme);
         return await Task.FromResult(AuthenticateResult.Success(ticket));
     }
 

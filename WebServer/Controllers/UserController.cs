@@ -35,7 +35,7 @@ public class UserController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id }, new { id });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [HttpPatch("{id:int}")]
     public IActionResult Patch(int id, [FromBody] PatchUserDto patchUserDto)
     {
@@ -56,10 +56,11 @@ public class UserController : ControllerBase
         });
     }
 
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public IActionResult Get()
     {
+        List<Claim> a = User.Claims.ToList();
         Dictionary<int, ResponseUserDto> users =  _userRepository.GetUsers().Select(pair =>
             {
                 return new KeyValuePair<int, ResponseUserDto>(pair.Key, new ResponseUserDto
@@ -72,7 +73,7 @@ public class UserController : ControllerBase
         return Ok(users);
     }
 
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [HttpGet("{id:int}")]
     public IActionResult Get(int id)
     {
@@ -85,7 +86,7 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id:int}")]
     public IActionResult Delete(int id)
     {

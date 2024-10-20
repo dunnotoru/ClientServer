@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
@@ -40,7 +41,32 @@ public static class Program
     private static void RegisterServices(IServiceCollection services)
     {
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo { Title = "Demo API", Version = "v1" });
+            options.AddSecurityDefinition("basic", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "basic",
+                In = ParameterLocation.Header,
+                Description = "Basic Authorization header."
+            });
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "basic"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+        });
         services.AddControllers();
         services.AddAuthentication(options =>
         {
