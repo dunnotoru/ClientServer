@@ -1,5 +1,7 @@
-using System.Diagnostics;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.OpenApi.Models;
+using WebServer.Auth;
 using WebServer.DAL;
 using WebServer.DAL.Repositories;
 using WebServer.DAL.Repositories.Abstractions;
@@ -28,6 +30,9 @@ public static class Program
             app.UseSwaggerUI();
         }
 
+        app.UseAuthentication();
+        app.UseAuthorization();
+        
         app.MapControllers();
         app.Run();
     }
@@ -37,7 +42,14 @@ public static class Program
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen();
         services.AddControllers();
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = BasicAuthenticationDefaults.Scheme;
+            options.DefaultChallengeScheme = BasicAuthenticationDefaults.Scheme;
+        }).AddScheme<BasicAuthenticationOptions, BasicAuthenticationHandler>(BasicAuthenticationDefaults.Scheme, null);
+        services.AddAuthorization();
 
+        services.AddSingleton<BasicAuthenticationService>();
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddSingleton<IUserRepository, InMemoryUserRepository>();
         services.AddSingleton<IBase64Encoder, Base64Encoder>();

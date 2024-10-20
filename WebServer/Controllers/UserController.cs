@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WebServer.DAL;
 using WebServer.DAL.DTOs;
 using WebServer.DAL.Repositories.Abstractions;
@@ -12,17 +15,16 @@ public class UserController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
     private readonly ILogger<UserController> _logger;
-    private readonly IBase64Encoder _base64Encoder;
     
-    public UserController(IUserRepository userRepository, ILogger<UserController> logger, IBase64Encoder base64Encoder)
+    public UserController(IUserRepository userRepository, ILogger<UserController> logger)
     {
         _userRepository = userRepository;
         _logger = logger;
-        _base64Encoder = base64Encoder;
     }
     
     [HttpPost]
-    public IActionResult Post([FromBody] CreateUserDto createUser)
+    [AllowAnonymous]
+    public IActionResult Login([FromBody] CreateUserDto createUser)
     {
         int id = _userRepository.Create(createUser);
         if (id < 0)
@@ -33,17 +35,10 @@ public class UserController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id }, new { id });
     }
 
+    [Authorize]
     [HttpPatch("{id:int}")]
-    public IActionResult Patch(int id,
-        [FromBody] PatchUserDto patchUserDto,
-        [FromHeader(Name = "Authorization")] string? authHeader)
+    public IActionResult Patch(int id, [FromBody] PatchUserDto patchUserDto)
     {
-        IActionResult? result = AuthorizeAdmin(authHeader);
-        if (result is not null)
-        {
-            return result;
-        }
-        
         User? user = _userRepository.GetById(id);
         if (user is null)
         {
@@ -61,15 +56,10 @@ public class UserController : ControllerBase
         });
     }
 
+    [Authorize]
     [HttpGet]
-    public IActionResult Get([FromHeader(Name = "Authorization")] string? authHeader)
+    public IActionResult Get()
     {
-        IActionResult? result = AuthorizeAdmin(authHeader);
-        if (result is not null)
-        {
-            return result;
-        }
-        
         Dictionary<int, ResponseUserDto> users =  _userRepository.GetUsers().Select(pair =>
             {
                 return new KeyValuePair<int, ResponseUserDto>(pair.Key, new ResponseUserDto
@@ -82,15 +72,10 @@ public class UserController : ControllerBase
         return Ok(users);
     }
 
+    [Authorize]
     [HttpGet("{id:int}")]
-    public IActionResult Get(int id, [FromHeader(Name = "Authorization")] string? authHeader)
+    public IActionResult Get(int id)
     {
-        IActionResult? result = AuthorizeAdminOrUser(id, authHeader);
-        if (result is not null)
-        {
-            return result;
-        }
-        
         User? user = _userRepository.GetById(id);
         if (user is null)
         {
@@ -100,15 +85,10 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
+    [Authorize]
     [HttpDelete("{id:int}")]
-    public IActionResult Delete(int id, [FromHeader(Name = "Authorization")] string? authHeader)
+    public IActionResult Delete(int id)
     {
-        IActionResult? result = AuthorizeAdminOrUser(id, authHeader);
-        if (result is not null)
-        {
-            return result;
-        }
-        
         User? user = _userRepository.GetById(id);
         if (user is null)
         {
@@ -122,96 +102,4 @@ public class UserController : ControllerBase
         
         return Ok();
     }
-
-    private IActionResult? AuthorizeAdmin(string? authHeader)
-    {
-        if (authHeader is null)
-        {
-            Response.Headers.Append("WWW-Authenticate", "Basic Realm=\"Access to the api\"");
-            return BadRequest();
-        }
-        
-        string username;
-        string password;
-        try
-        {
-            (username, password) = GetUsernameAndPassword(authHeader);
-        }
-        catch (FormatException ex)
-        {
-            return BadRequest("Invalid username or password: ");
-        }
-        
-        User? storedUser = _userRepository.GetByUsername(username);
-        if (storedUser is null)
-        {
-            return NotFound("User with this name is not found");
-        }
-        if (_userRepository.ValidatePassword(username, password))
-        {
-            return Unauthorized();
-        }
-        if (storedUser.UserRole != Role.Admin)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden);
-        }
-
-        return null;
-    }
-
-    private IActionResult? AuthorizeAdminOrUser(int requiredId, string? authHeader)
-    {
-        if (authHeader is null)
-        {
-            Response.Headers.Append("WWW-Authenticate", "Basic Realm=\"Access to the api\"");
-            return BadRequest();
-        }
-        
-        string username;
-        string password;
-        try
-        {
-            (username, password) = GetUsernameAndPassword(authHeader);
-        }
-        catch (FormatException ex)
-        {
-            return BadRequest("Invalid username or password: ");
-        }
-        
-        User? storedUser = _userRepository.GetByUsername(username);
-        if (storedUser is null)
-        {
-            return NotFound("User with this name is not found");
-        }
-        if (_userRepository.ValidatePassword(username, password))
-        {
-            return Unauthorized();
-        }
-        
-        User? requiredUser = _userRepository.GetById(requiredId);
-
-        if (storedUser.UserRole == Role.Admin)
-        {
-            return null;
-        }
-        
-        if (requiredUser is null || requiredUser.Username != storedUser.Username)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden);
-        }
-
-        return null;
-    }
-
-    private Tuple<string, string> GetUsernameAndPassword(string base64EncodedUserData)
-    {
-        string[] basicSplit = base64EncodedUserData.Split(" "); 
-        if (basicSplit.Length != 2)
-        {
-            throw new FormatException("Invalid username or password");
-        }
-        string data = _base64Encoder.Decode(basicSplit[1]);
-        string[] s = data.Split(":");
-        return new Tuple<string, string>(s[0], s[1]);
-    } 
 }

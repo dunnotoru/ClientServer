@@ -9,7 +9,7 @@ public class InMemoryUserRepository : IUserRepository
 {
     private readonly ConcurrentDictionary<int, User> _users = new ConcurrentDictionary<int, User>();
     private readonly IPasswordHasher<User> _passwordHasher;
-    private int currentId = 0;
+    private int _currentId = 0;
 
     public InMemoryUserRepository(IPasswordHasher<User> passwordHasher)
     {
@@ -40,10 +40,10 @@ public class InMemoryUserRepository : IUserRepository
             
         user.PasswordHash = _passwordHasher.HashPassword(user, createUserDto.Password);
         
-        bool result = _users.TryAdd(currentId++, user);
+        bool result = _users.TryAdd(_currentId++, user);
         if (result)
         {
-            return currentId - 1;
+            return _currentId - 1;
         }
 
         return -1;
@@ -94,6 +94,7 @@ public class InMemoryUserRepository : IUserRepository
             return false;
         }
         
-        return user.PasswordHash == _passwordHasher.HashPassword(user, password);
+        PasswordVerificationResult result= _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+        return result == PasswordVerificationResult.Success;
     }
 }
