@@ -11,19 +11,16 @@ using WebServer.Services;
 
 namespace WebServer.Auth;
 
-public class BasicAuthenticationHandler : AuthenticationHandler<BasicAuthenticationOptions>
+public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
-    private readonly BasicAuthenticationService _basicAuthenticationService;
-    private IUserRepository _userRepository;
+    private readonly IUserRepository _userRepository;
 
     public BasicAuthenticationHandler(
-        IOptionsMonitor<BasicAuthenticationOptions> options,
+        IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        BasicAuthenticationService basicAuthenticationService,
         IUserRepository userRepository) : base(options, logger, encoder)
     {
-        _basicAuthenticationService = basicAuthenticationService;
         _userRepository = userRepository;
     }
     
@@ -58,11 +55,13 @@ public class BasicAuthenticationHandler : AuthenticationHandler<BasicAuthenticat
         
         string decodedCredentials = Encoding.UTF8.GetString(bytes);
         string[] s = decodedCredentials.Split(":");
-        User? storedUser = _userRepository.GetByUsername(s[0]);
-        if (storedUser is null)
+        Tuple<int, User>? storedData = _userRepository.GetByUsername(s[0]);
+        if (storedData is null)
         {
             return await Task.FromResult(AuthenticateResult.Fail("User does not exist"));
         }
+        
+        User storedUser = storedData.Item2;
 
         if (!_userRepository.ValidatePassword(storedUser.Username, s[1]))
         {

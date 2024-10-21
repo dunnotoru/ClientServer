@@ -55,9 +55,10 @@ public class InMemoryUserRepository : IUserRepository
         return user;
     }
 
-    public User? GetByUsername(string username)
+    public Tuple<int, User>? GetByUsername(string username)
     {
-        return _users.FirstOrDefault(u => u.Value.Username == username).Value;
+        KeyValuePair<int, User> a = _users.FirstOrDefault(u => u.Value.Username == username);
+        return new Tuple<int, User>(a.Key, a.Value);
     }
 
     public Dictionary<int, User> GetUsers()
@@ -88,13 +89,14 @@ public class InMemoryUserRepository : IUserRepository
 
     public bool ValidatePassword(string username, string password)
     {
-        User? user = GetByUsername(username);
-        if (user == null)
+        Tuple<int, User>? pair = GetByUsername(username);
+        if (pair is null)
         {
             return false;
         }
         
-        PasswordVerificationResult result= _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+        User user = pair.Item2;
+        PasswordVerificationResult result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash , password);
         return result == PasswordVerificationResult.Success;
     }
 }

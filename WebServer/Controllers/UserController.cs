@@ -15,11 +15,15 @@ public class UserController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
     private readonly ILogger<UserController> _logger;
+    private readonly IAuthorizationService _authorizationService;
     
-    public UserController(IUserRepository userRepository, ILogger<UserController> logger)
+    public UserController(IUserRepository userRepository,
+        ILogger<UserController> logger,
+        IAuthorizationService authorizationService)
     {
         _userRepository = userRepository;
         _logger = logger;
+        _authorizationService = authorizationService;
     }
     
     [HttpPost]
@@ -60,7 +64,6 @@ public class UserController : ControllerBase
     [HttpGet]
     public IActionResult Get()
     {
-        List<Claim> a = User.Claims.ToList();
         Dictionary<int, ResponseUserDto> users =  _userRepository.GetUsers().Select(pair =>
             {
                 return new KeyValuePair<int, ResponseUserDto>(pair.Key, new ResponseUserDto
@@ -73,7 +76,7 @@ public class UserController : ControllerBase
         return Ok(users);
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = "AdminOrOwner")]
     [HttpGet("{id:int}")]
     public IActionResult Get(int id)
     {

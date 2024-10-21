@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.OpenApi.Models;
 using WebServer.Auth;
@@ -72,10 +73,17 @@ public static class Program
         {
             options.DefaultAuthenticateScheme = BasicAuthenticationDefaults.Scheme;
             options.DefaultChallengeScheme = BasicAuthenticationDefaults.Scheme;
-        }).AddScheme<BasicAuthenticationOptions, BasicAuthenticationHandler>(BasicAuthenticationDefaults.Scheme, null);
-        services.AddAuthorization();
-
-        services.AddSingleton<BasicAuthenticationService>();
+        }).AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationDefaults.Scheme, null);
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("AdminOrOwner", policy =>
+            {
+                policy.Requirements.Add(new AdminOrOwnerRequirement());
+                policy.RequireAuthenticatedUser();
+            });
+        });
+        
+        services.AddSingleton<IAuthorizationHandler, AdminOrOwnerHandler>();
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddSingleton<IUserRepository, InMemoryUserRepository>();
         services.AddSingleton<IBase64Encoder, Base64Encoder>();
