@@ -1,11 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebServer.DAL;
 using WebServer.DAL.DTOs;
 using WebServer.DAL.Repositories.Abstractions;
-using WebServer.Services.Abstractions;
 
 namespace WebServer.Controllers;
 
@@ -15,21 +12,18 @@ public class UserController : ControllerBase
 {
     private readonly IUserRepository _userRepository;
     private readonly ILogger<UserController> _logger;
-    private readonly IAuthorizationService _authorizationService;
     
-    public UserController(IUserRepository userRepository,
-        ILogger<UserController> logger,
-        IAuthorizationService authorizationService)
+    public UserController(IUserRepository userRepository, ILogger<UserController> logger)
     {
         _userRepository = userRepository;
         _logger = logger;
-        _authorizationService = authorizationService;
     }
     
     [HttpPost]
     [AllowAnonymous]
     public IActionResult Login([FromBody] CreateUserDto createUser)
     {
+        _logger.LogInformation("Login endpoint");
         int id = _userRepository.Create(createUser);
         if (id < 0)
         {
@@ -43,6 +37,7 @@ public class UserController : ControllerBase
     [HttpPatch("{id:int}")]
     public IActionResult Patch(int id, [FromBody] PatchUserDto patchUserDto)
     {
+        _logger.LogInformation("Patch user");
         User? user = _userRepository.GetById(id);
         if (user is null)
         {
@@ -56,7 +51,7 @@ public class UserController : ControllerBase
 
         return Ok(new
         {
-            id = id
+            id
         });
     }
 
@@ -64,6 +59,7 @@ public class UserController : ControllerBase
     [HttpGet]
     public IActionResult Get()
     {
+        _logger.LogInformation("Get all users");
         Dictionary<int, ResponseUserDto> users =  _userRepository.GetUsers().Select(pair =>
             {
                 return new KeyValuePair<int, ResponseUserDto>(pair.Key, new ResponseUserDto
@@ -89,10 +85,11 @@ public class UserController : ControllerBase
         return Ok(user);
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Policy = "AdminOrOwner")]
     [HttpDelete("{id:int}")]
     public IActionResult Delete(int id)
     {
+        _logger.LogInformation("Delete user");
         User? user = _userRepository.GetById(id);
         if (user is null)
         {
