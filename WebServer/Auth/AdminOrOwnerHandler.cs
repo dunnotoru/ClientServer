@@ -1,19 +1,10 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
-using WebServer.DAL;
-using WebServer.DAL.Repositories.Abstractions;
 
 namespace WebServer.Auth;
 
 public class AdminOrOwnerHandler : AuthorizationHandler<AdminOrOwnerRequirement>
 {
-    private readonly IUserRepository _userRepository;
-
-    public AdminOrOwnerHandler(IUserRepository userRepository)
-    {
-        _userRepository = userRepository;
-    }
-
     protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, AdminOrOwnerRequirement requirement)
     {
         if (context.Resource is not HttpContext httpContext)
@@ -38,17 +29,7 @@ public class AdminOrOwnerHandler : AuthorizationHandler<AdminOrOwnerRequirement>
             context.Succeed(requirement);
             return Task.CompletedTask;
         }
-    
-        User? a = _userRepository.GetById(userId);
-        if (a is null)
-        {
-            return Task.CompletedTask;
-        }
         
-        if (!context.User.HasClaim(ClaimTypes.NameIdentifier, a.Username))
-        {
-            return Task.CompletedTask;
-        }
 
         context.Succeed(requirement);
         return Task.CompletedTask;

@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using WebServer.Auth;
 using WebServer.DAL;
-using WebServer.DAL.Repositories;
-using WebServer.DAL.Repositories.Abstractions;
+using WebServer.DAL.Entity;
 using WebServer.Services;
 using WebServer.Services.Abstractions;
 
@@ -21,9 +22,14 @@ public static class Program
         WebApplicationBuilder builder = 
             WebApplication.CreateBuilder(args);
         
-        RegisterServices(builder.Services);
-
+        RegisterServices(builder);
+        
         WebApplication app = builder.Build();
+
+        using (IServiceScope scope = app.Services.CreateScope())
+        {
+            Initialize(scope.ServiceProvider).Wait();
+        }
 
         if (app.Environment.IsDevelopment())
         {
@@ -33,13 +39,50 @@ public static class Program
 
         app.UseAuthentication();
         app.UseAuthorization();
-        
         app.MapControllers();
         app.Run();
     }
 
-    private static void RegisterServices(IServiceCollection services)
+    private static async Task Initialize(IServiceProvider provider)
     {
+        UserManager<User> userManager = provider.GetRequiredService<UserManager<User>>();
+        RoleManager<IdentityRole<int>> roleManager = provider.GetRequiredService<RoleManager<IdentityRole<int>>>();
+        IPasswordHasher<User> passwordHasher = provider.GetRequiredService<IPasswordHasher<User>>();
+        
+        if (!await roleManager.RoleExistsAsync(Role.Admin.ToString()))
+        {
+            await roleManager.CreateAsync(
+                new IdentityRole<int>(Role.Admin.ToString())
+                );
+        }
+        if (!await roleManager.RoleExistsAsync(Role.User.ToString()))
+        {
+            await roleManager.CreateAsync(
+                new IdentityRole<int>(Role.User.ToString())
+                );
+        }
+        
+        User? storedRoot = await userManager.FindByNameAsync("root");
+        if (storedRoot is not null)
+        {
+            return;
+        }
+
+        User root = new User { UserName = "root" };
+        IdentityResult result = await userManager.CreateAsync(root, passwordHasher.HashPassword(root, "root"));
+
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException("Failed to create root user.");
+        }
+        
+        IdentityRole<int> adminRole = await roleManager.FindByNameAsync(Role.Admin.ToString()) ?? throw new NotSupportedException();
+        await userManager.AddToRoleAsync(root, adminRole.Name ?? "Admin");
+    }
+
+    private static void RegisterServices(WebApplicationBuilder builder)
+    {
+        IServiceCollection services = builder.Services;
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
@@ -49,7 +92,7 @@ public static class Program
                 Name = "Authorization",
                 Type = SecuritySchemeType.Http,
                 Scheme = "basic",
-                In = ParameterLocation.Header,
+                    In = ParameterLocation.Header,
                 Description = "Basic Authorization header."
             });
             options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -84,7 +127,13 @@ public static class Program
         
         services.AddSingleton<IAuthorizationHandler, AdminOrOwnerHandler>();
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
-        services.AddSingleton<IUserRepository, InMemoryUserRepository>();
+        services.AddDbContext<UserDbContext>(options =>
+        {
+            options.UseNpgsql(builder.Configuration.GetConnectionString("IdentityConnection"));
+        });
+        services.AddIdentity<User, IdentityRole<int>>()
+            .AddEntityFrameworkStores<UserDbContext>();
+        
         services.AddSingleton<IBase64Encoder, Base64Encoder>();
     }
 }

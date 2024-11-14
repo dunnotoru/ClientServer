@@ -1,4 +1,6 @@
-﻿namespace WebServer.DAL;
+﻿using Microsoft.AspNetCore.Identity;
+
+namespace WebServer.DAL.Entity;
 
 public enum Role
 {
@@ -6,9 +8,8 @@ public enum Role
     User
 }
 
-public class User
+public class User : IdentityUser<int> 
 {
-    public string PasswordHash { get; set; }= string.Empty;
     public string Username { get; set; } = string.Empty;
     public Role UserRole { get; set; } = Role.User;
 }

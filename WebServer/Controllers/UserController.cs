@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using WebServer.DAL;
+using Microsoft.EntityFrameworkCore;
 using WebServer.DAL.DTOs;
-using WebServer.DAL.Repositories.Abstractions;
+using WebServer.DAL.Entity;
 
 namespace WebServer.Controllers;
 
@@ -10,97 +11,118 @@ namespace WebServer.Controllers;
 [Route("api/users")]
 public class UserController : ControllerBase
 {
-    private readonly IUserRepository _userRepository;
     private readonly ILogger<UserController> _logger;
+    private readonly IPasswordHasher<User> _passwordHasher;
+    private readonly UserManager<User> _userManager;
     
-    public UserController(IUserRepository userRepository, ILogger<UserController> logger)
+    public UserController(ILogger<UserController> logger,
+        IPasswordHasher<User> passwordHasher, 
+        UserManager<User> userManager)
     {
-        _userRepository = userRepository;
         _logger = logger;
+        _passwordHasher = passwordHasher;
+        _userManager = userManager;
     }
     
     [HttpPost]
     [AllowAnonymous]
-    public IActionResult Login([FromBody] CreateUserDto createUser)
+    public async Task<IActionResult> Register([FromBody] CreateUserDto createUser)
     {
         _logger.LogInformation("Login endpoint");
-        int id = _userRepository.Create(createUser);
-        if (id < 0)
+        User user = new User
         {
-            return BadRequest("User with this name already exists");
+            Username = createUser.Username,
+        };
+        
+        IdentityResult result = await _userManager.CreateAsync(
+            user,
+            _passwordHasher.HashPassword(user, createUser.Password)
+            );
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(new { Errors = result.Errors.Select(e => e.Description) });
         }
         
-        return CreatedAtAction(nameof(Get), new { id }, new { id });
+        return CreatedAtAction(nameof(Get), new { user.Id }, new { user.Id });
     }
-
+    
     [Authorize(Roles = "Admin")]
     [HttpPatch("{id:int}")]
-    public IActionResult Patch(int id, [FromBody] PatchUserDto patchUserDto)
+    public async Task<IActionResult> Patch(int id, [FromBody] PatchUserDto patchUserDto)
     {
         _logger.LogInformation("Patch user");
-        User? user = _userRepository.GetById(id);
-        if (user is null)
+        
+        User? storedUser = _userManager.Users.SingleOrDefault(u => u.Id == id);
+        if (storedUser is null)
         {
             return NotFound();
         }
 
-        if (!_userRepository.Patch(id, patchUserDto))
+        storedUser.UserRole = patchUserDto.UserRole;
+        await _userManager.AddToRoleAsync(storedUser, storedUser.UserRole.ToString());
+        
+        IdentityResult result = await _userManager.UpdateAsync(storedUser);
+
+        if (!result.Succeeded)
         {
             return Problem();
         }
-
+    
         return Ok(new
         {
-            id
+            storedUser.Id
         });
     }
-
+    
     [Authorize(Roles = "Admin")]
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get()
     {
         _logger.LogInformation("Get all users");
-        Dictionary<int, ResponseUserDto> users =  _userRepository.GetUsers().Select(pair =>
-            {
-                return new KeyValuePair<int, ResponseUserDto>(pair.Key, new ResponseUserDto
-                {
-                    Username = pair.Value.Username,
-                    UserRole = pair.Value.UserRole,
-                });
-            })
-        .ToDictionary();
-        return Ok(users);
-    }
 
+        var result = await _userManager.Users
+            .Select(user => new
+            {
+                user.Username,
+                user.UserRole
+            }).ToListAsync();
+        
+        return Ok(result);
+    }
+    
     [Authorize(Policy = "AdminOrOwner")]
     [HttpGet("{id:int}")]
     public IActionResult Get(int id)
     {
-        User? user = _userRepository.GetById(id);
-        if (user is null)
+        _logger.LogInformation("Get user");
+        User? storedUser = _userManager.Users.SingleOrDefault(u => u.Id == id);
+        if (storedUser is null)
         {
             return NotFound();
         }
         
-        return Ok(user);
+        return Ok(storedUser);
     }
-
+    
     [Authorize(Policy = "AdminOrOwner")]
     [HttpDelete("{id:int}")]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id)
     {
         _logger.LogInformation("Delete user");
-        User? user = _userRepository.GetById(id);
-        if (user is null)
+        User? storedUser = _userManager.Users.SingleOrDefault(u => u.Id == id);
+        if (storedUser is null)
         {
             return NotFound();
         }
+        
+        IdentityResult result = await _userManager.DeleteAsync(storedUser);
 
-        if (!_userRepository.Delete(id))
+        if (!result.Succeeded)
         {
             return Problem();
         }
-        
+    
         return Ok();
     }
 }
