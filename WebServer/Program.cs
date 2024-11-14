@@ -36,6 +36,12 @@ public static class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+        
+        using (IServiceScope scope = app.Services.CreateScope())
+        {
+            UserDbContext dbContext = scope.ServiceProvider.GetRequiredService<UserDbContext>();
+            dbContext.Database.Migrate();
+        }
 
         app.UseAuthentication();
         app.UseAuthorization();

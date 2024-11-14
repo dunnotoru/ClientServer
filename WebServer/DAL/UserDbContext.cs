@@ -13,6 +13,7 @@ public sealed class UserDbContext : IdentityDbContext<User, IdentityRole<int>, i
         DbContextOptions optionsBuilder) : base(optionsBuilder)
     {
         _configuration = configuration;
+        Database.Migrate();
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
