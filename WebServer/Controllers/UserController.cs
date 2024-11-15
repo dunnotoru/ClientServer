@@ -16,14 +16,17 @@ public class UserController : ControllerBase
     private readonly ILogger<UserController> _logger;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly UserManager<User> _userManager;
+    private readonly RoleManager<User> _roleManager;
     
     public UserController(ILogger<UserController> logger,
         IPasswordHasher<User> passwordHasher, 
-        UserManager<User> userManager)
+        UserManager<User> userManager, 
+        RoleManager<User> roleManager)
     {
         _logger = logger;
         _passwordHasher = passwordHasher;
         _userManager = userManager;
+        _roleManager = roleManager;
     }
     
     [HttpPost]
@@ -63,6 +66,12 @@ public class UserController : ControllerBase
             return NotFound();
         }
 
+        bool exists = await _roleManager.RoleExistsAsync(patchUserDto.Role);
+        if (!exists)
+        {
+            return BadRequest("Role does not exist");
+        }
+        
         await _userManager.AddToRoleAsync(storedUser, patchUserDto.Role);
         IdentityResult result = await _userManager.UpdateAsync(storedUser);
 
@@ -99,7 +108,7 @@ public class UserController : ControllerBase
     
     [Authorize(Policy = "AdminOrOwner", AuthenticationSchemes = BasicAuthenticationDefaults.Scheme)]
     [HttpGet("{id:int}")]
-    public IActionResult Get(int id)
+    public async Task<IActionResult> Get(int id)
     {
         _logger.LogInformation("Get user");
         User? storedUser = _userManager.Users.SingleOrDefault(u => u.Id == id);
@@ -108,7 +117,11 @@ public class UserController : ControllerBase
             return NotFound();
         }
         
-        return Ok(storedUser);
+        return Ok(new ResponseUserDto
+        {
+            Username = storedUser.UserName ?? "unknown",
+            Roles = await _userManager.GetRolesAsync(storedUser)
+        });
     }
     
     [Authorize(Policy = "AdminOrOwner", AuthenticationSchemes = BasicAuthenticationDefaults.Scheme)]

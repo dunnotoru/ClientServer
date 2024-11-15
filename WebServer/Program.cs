@@ -111,7 +111,6 @@ public static class Program
 
         services.AddAuthentication(BasicAuthenticationDefaults.Scheme)
             .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationDefaults.Scheme, null);
-        
 
         services.AddScoped<BasicAuthenticationHandler>();
         services.AddAuthorization(options =>
