@@ -1,37 +1,59 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using WebServer.DAL.Entity;
 
 namespace WebServer.Auth;
 
 public class AdminOrOwnerHandler : AuthorizationHandler<AdminOrOwnerRequirement>
 {
-    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, AdminOrOwnerRequirement requirement)
+    private readonly UserManager<User> _userManager;
+
+    public AdminOrOwnerHandler(UserManager<User> userManager)
+    {
+        _userManager = userManager;
+    }
+
+    protected override async Task HandleRequirementAsync(AuthorizationHandlerContext context, AdminOrOwnerRequirement requirement)
     {
         if (context.Resource is not HttpContext httpContext)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         if (!httpContext.Request.RouteValues.TryGetValue("id", out object? id))
         {
-            return Task.CompletedTask;
+            return;
         }
         
         int userId = Convert.ToInt32(id);
-        
-        if (!(context?.User?.Identity?.IsAuthenticated ?? true))
+        if (httpContext.User.Identity is not ClaimsIdentity identity)
         {
-            return Task.CompletedTask;
+            return;
+        }
+        
+        if (!identity.IsAuthenticated)
+        {
+            return;
         }
         
         if (context.User.IsInRole("Admin"))
         {
             context.Succeed(requirement);
-            return Task.CompletedTask;
+            return;
         }
-        
 
-        context.Succeed(requirement);
-        return Task.CompletedTask;
+        User? storedUser = await _userManager.FindByIdAsync(userId.ToString());
+        if (storedUser is null)
+        {
+            return;
+        }
+
+        if (context.User.HasClaim(
+                ClaimTypes.NameIdentifier,
+                storedUser.UserName ?? throw new InvalidOperationException("username is missing")))
+        {
+            context.Succeed(requirement);
+        }
     }
 }

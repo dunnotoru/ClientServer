@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebServer.Auth;
 using WebServer.DAL.DTOs;
 using WebServer.DAL.Entity;
 
@@ -31,13 +33,15 @@ public class UserController : ControllerBase
         _logger.LogInformation("Login endpoint");
         User user = new User
         {
-            Username = createUser.Username,
+            UserName = createUser.Username,
         };
         
         IdentityResult result = await _userManager.CreateAsync(
             user,
             _passwordHasher.HashPassword(user, createUser.Password)
             );
+
+        await _userManager.AddToRoleAsync(user, "User");
 
         if (!result.Succeeded)
         {
@@ -47,7 +51,7 @@ public class UserController : ControllerBase
         return CreatedAtAction(nameof(Get), new { user.Id }, new { user.Id });
     }
     
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin", AuthenticationSchemes = BasicAuthenticationDefaults.Scheme)]
     [HttpPatch("{id:int}")]
     public async Task<IActionResult> Patch(int id, [FromBody] PatchUserDto patchUserDto)
     {
@@ -59,9 +63,7 @@ public class UserController : ControllerBase
             return NotFound();
         }
 
-        storedUser.UserRole = patchUserDto.UserRole;
-        await _userManager.AddToRoleAsync(storedUser, storedUser.UserRole.ToString());
-        
+        await _userManager.AddToRoleAsync(storedUser, patchUserDto.Role);
         IdentityResult result = await _userManager.UpdateAsync(storedUser);
 
         if (!result.Succeeded)
@@ -75,23 +77,27 @@ public class UserController : ControllerBase
         });
     }
     
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin", AuthenticationSchemes = BasicAuthenticationDefaults.Scheme)]
     [HttpGet]
     public async Task<IActionResult> Get()
     {
         _logger.LogInformation("Get all users");
-
-        var result = await _userManager.Users
-            .Select(user => new
-            {
-                user.Username,
-                user.UserRole
-            }).ToListAsync();
         
-        return Ok(result);
+        List<User> users = await _userManager.Users.ToListAsync();
+        List<ResponseUserDto> userDtos = new List<ResponseUserDto>();
+        foreach (User user in users)
+        {
+            userDtos.Add(new ResponseUserDto
+            {
+                Username = user.UserName ?? "unknown",
+                Roles = await _userManager.GetRolesAsync(user)
+            });
+        }
+        
+        return Ok(userDtos);
     }
     
-    [Authorize(Policy = "AdminOrOwner")]
+    [Authorize(Policy = "AdminOrOwner", AuthenticationSchemes = BasicAuthenticationDefaults.Scheme)]
     [HttpGet("{id:int}")]
     public IActionResult Get(int id)
     {
@@ -105,7 +111,7 @@ public class UserController : ControllerBase
         return Ok(storedUser);
     }
     
-    [Authorize(Policy = "AdminOrOwner")]
+    [Authorize(Policy = "AdminOrOwner", AuthenticationSchemes = BasicAuthenticationDefaults.Scheme)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

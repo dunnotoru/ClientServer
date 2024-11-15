@@ -1,8 +1,6 @@
-﻿using WebServer.DAL.Entity;
-
-namespace WebServer.DAL.DTOs;
+﻿namespace WebServer.DAL.DTOs;
 
 public class PatchUserDto
 {
-    public Role UserRole { get; set; }
+    public string Role { get; set; } = String.Empty;
 }

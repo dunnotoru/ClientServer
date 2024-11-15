@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace WebServer.Migrations
 {
     /// <inheritdoc />
-    public partial class initial : Migration
+    public partial class InitialWithRoot : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -103,9 +103,8 @@ namespace WebServer.Migrations
                 {
                     Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Username = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     UserRole = table.Column<int>(type: "integer", nullable: false, defaultValue: 1),
-                    UserName = table.Column<string>(type: "text", nullable: true),
+                    UserName = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "text", nullable: true),
                     Email = table.Column<string>(type: "text", nullable: true),
                     NormalizedEmail = table.Column<string>(type: "text", nullable: true),
@@ -126,9 +125,9 @@ namespace WebServer.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Users_Username",
+                name: "IX_Users_UserName",
                 table: "Users",
-                column: "Username",
+                column: "UserName",
                 unique: true);
         }
 
