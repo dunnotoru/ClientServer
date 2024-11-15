@@ -26,10 +26,9 @@ public sealed class UserDbContext : IdentityDbContext<User, IdentityRole<int>, i
         modelBuilder.Entity<User>(builder =>
         {
             builder.HasKey(u => u.Id);
-            builder.HasIndex(u => u.Username).IsUnique();
-            builder.Property(u => u.Username).HasMaxLength(100);
+            builder.HasIndex(u => u.UserName).IsUnique();
+            builder.Property(u => u.UserName).HasMaxLength(100);
             builder.Property(u => u.PasswordHash).HasMaxLength(100);
-            builder.Property(u => u.UserRole).HasDefaultValue(Role.User);
         });
         
         modelBuilder.Entity<IdentityUserLogin<int>>()

@@ -12,8 +12,8 @@ using WebServer.DAL;
 namespace WebServer.Migrations
 {
     [DbContext(typeof(UserDbContext))]
-    [Migration("20241114185712_initial")]
-    partial class initial
+    [Migration("20241115111940_InitialWithRoot")]
+    partial class InitialWithRoot
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -191,21 +191,17 @@ namespace WebServer.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("UserName")
-                        .HasColumnType("text");
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("UserRole")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
                         .HasDefaultValue(1);
 
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("Username")
+                    b.HasIndex("UserName")
                         .IsUnique();
 
                     b.ToTable("Users");

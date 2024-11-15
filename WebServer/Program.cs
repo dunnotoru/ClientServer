@@ -36,16 +36,12 @@ public static class Program
             app.UseSwagger();
             app.UseSwaggerUI();
         }
-        
-        using (IServiceScope scope = app.Services.CreateScope())
-        {
-            UserDbContext dbContext = scope.ServiceProvider.GetRequiredService<UserDbContext>();
-            dbContext.Database.Migrate();
-        }
 
         app.UseAuthentication();
         app.UseAuthorization();
+        
         app.MapControllers();
+        
         app.Run();
     }
 
@@ -55,16 +51,19 @@ public static class Program
         RoleManager<IdentityRole<int>> roleManager = provider.GetRequiredService<RoleManager<IdentityRole<int>>>();
         IPasswordHasher<User> passwordHasher = provider.GetRequiredService<IPasswordHasher<User>>();
         
-        if (!await roleManager.RoleExistsAsync(Role.Admin.ToString()))
+        const string adminRoleName = "Admin";
+        const string userRoleName = "User";
+        
+        if (!await roleManager.RoleExistsAsync(adminRoleName))
         {
             await roleManager.CreateAsync(
-                new IdentityRole<int>(Role.Admin.ToString())
+                new IdentityRole<int>(adminRoleName)
                 );
         }
-        if (!await roleManager.RoleExistsAsync(Role.User.ToString()))
+        if (!await roleManager.RoleExistsAsync(userRoleName))
         {
             await roleManager.CreateAsync(
-                new IdentityRole<int>(Role.User.ToString())
+                new IdentityRole<int>(userRoleName)
                 );
         }
         
@@ -75,15 +74,8 @@ public static class Program
         }
 
         User root = new User { UserName = "root" };
-        IdentityResult result = await userManager.CreateAsync(root, passwordHasher.HashPassword(root, "root"));
-
-        if (!result.Succeeded)
-        {
-            throw new InvalidOperationException("Failed to create root user.");
-        }
-        
-        IdentityRole<int> adminRole = await roleManager.FindByNameAsync(Role.Admin.ToString()) ?? throw new NotSupportedException();
-        await userManager.AddToRoleAsync(root, adminRole.Name ?? "Admin");
+        await userManager.CreateAsync(root, passwordHasher.HashPassword(root, "root"));
+        await userManager.AddToRoleAsync(root, adminRoleName);
     }
 
     private static void RegisterServices(WebApplicationBuilder builder)
@@ -116,12 +108,11 @@ public static class Program
                 }
             });
         });
-        services.AddControllers();
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = BasicAuthenticationDefaults.Scheme;
-            options.DefaultChallengeScheme = BasicAuthenticationDefaults.Scheme;
-        }).AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationDefaults.Scheme, null);
+
+        services.AddAuthentication(BasicAuthenticationDefaults.Scheme)
+            .AddScheme<AuthenticationSchemeOptions, BasicAuthenticationHandler>(BasicAuthenticationDefaults.Scheme, null);
+
+        services.AddScoped<BasicAuthenticationHandler>();
         services.AddAuthorization(options =>
         {
             options.AddPolicy("AdminOrOwner", policy =>
@@ -131,6 +122,7 @@ public static class Program
             });
         });
         
+        services.AddControllers();
         services.AddSingleton<IAuthorizationHandler, AdminOrOwnerHandler>();
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddDbContext<UserDbContext>(options =>

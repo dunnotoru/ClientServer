@@ -1,5 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using WebServer.DAL.Entity;
 
 namespace WebServer.Auth;
 
@@ -29,7 +31,6 @@ public class AdminOrOwnerHandler : AuthorizationHandler<AdminOrOwnerRequirement>
             context.Succeed(requirement);
             return Task.CompletedTask;
         }
-        
 
         context.Succeed(requirement);
         return Task.CompletedTask;
