@@ -8,11 +8,13 @@ public class ClientController
 {
     private readonly IBase64Encoder _base64Encoder;
     private readonly IUserService _userService;
+    private readonly ISongService _songService;
 
-    public ClientController(IBase64Encoder base64Encoder, IUserService userService)
+    public ClientController(IBase64Encoder base64Encoder, IUserService userService, ISongService songService)
     {
         _base64Encoder = base64Encoder;
         _userService = userService;
+        _songService = songService;
     }
 
     public void Run()
@@ -29,7 +31,8 @@ public class ClientController
                     (2, "Get user by id"),
                     (3, "Update user"),
                     (4, "Delete user"),
-                    (5, "Exit"),
+                    (5, "Get non-random song"),
+                    (6, "Exit"),
                 }));
 
             AnsiConsole.Clear();
@@ -52,9 +55,35 @@ public class ClientController
                     DeleteUser();
                     break;
                 case 5:
+                    GetSong();
+                    return;
+                case 6:
                     return;
             }
         }
+    }
+
+    private void GetSong()
+    {
+        AnsiConsole.MarkupLine("Authorize");
+        Tuple<string, string> input = InputAuthData();
+        string basicAuthToken = _base64Encoder.Encode(input.Item1 + ":" + input.Item2);
+        
+        AnsiConsole.Status()
+            .Spinner(Spinner.Known.Dots)
+            .Start("Sending request...", ctx =>
+            {
+                try
+                {
+                    string chorus = _songService.GetChorus();
+                    AnsiConsole.MarkupLine($"[green]Success![/]");
+                    AnsiConsole.MarkupLine(chorus);
+                }
+                catch (HttpRequestException e)
+                {
+                    AnsiConsole.MarkupLine($"[red]Error! {e.StatusCode}[/]");
+                }
+            });
     }
 
     private void CreateUser()
@@ -199,7 +228,7 @@ public class ClientController
                 (1, "User"),
             }));
         
-        int role = selection.Item1;
+        string role = selection.Item2;
         
         AnsiConsole.MarkupLine("Authorize");
         Tuple<string, string> input = InputAuthData();
@@ -213,7 +242,7 @@ public class ClientController
                 {
                     PatchUserDto patchUser = new PatchUserDto
                     {
-                        UserRole = role,
+                        Role = role,
                     };
                     int id = _userService.PatchUser(basicAuthToken, userId, patchUser);
                     if (id < 0)

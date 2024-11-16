@@ -16,12 +16,12 @@ public class UserController : ControllerBase
     private readonly ILogger<UserController> _logger;
     private readonly IPasswordHasher<User> _passwordHasher;
     private readonly UserManager<User> _userManager;
-    private readonly RoleManager<User> _roleManager;
+    private readonly RoleManager<IdentityRole<int>> _roleManager;
     
     public UserController(ILogger<UserController> logger,
         IPasswordHasher<User> passwordHasher, 
         UserManager<User> userManager, 
-        RoleManager<User> roleManager)
+        RoleManager<IdentityRole<int>> roleManager)
     {
         _logger = logger;
         _passwordHasher = passwordHasher;

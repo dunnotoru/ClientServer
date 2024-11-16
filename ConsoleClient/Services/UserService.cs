@@ -28,7 +28,7 @@ public class UserService(IPEndPoint endpoint) : IUserService
             Content = content
         };
         
-        HttpResponseMessage response = _client.Send(request, new CancellationToken());
+        HttpResponseMessage response = _client.Send(request);
         response.EnsureSuccessStatusCode();
         ResponseUserDto? a = response.Content.ReadFromJsonAsync<ResponseUserDto>().Result;
         return a?.Id ?? -1;
@@ -57,7 +57,7 @@ public class UserService(IPEndPoint endpoint) : IUserService
             Headers = { { "Authorization", $"Basic {basicAuthToken}" } }
         };
         
-        HttpResponseMessage response = _client.SendAsync(request).Result;
+        HttpResponseMessage response = _client.Send(request);
         response.EnsureSuccessStatusCode();
         return response.Content.ReadFromJsonAsync<UserDto>().Result ?? null;
     }
@@ -101,7 +101,7 @@ public class UserService(IPEndPoint endpoint) : IUserService
             Headers = { { "Authorization", $"Basic {basicAuthToken}" } }
         };
         
-        HttpResponseMessage response = _client.SendAsync(request).Result;
+        HttpResponseMessage response = _client.Send(request);
         response.EnsureSuccessStatusCode();
     }
 }

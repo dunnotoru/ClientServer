@@ -2,5 +2,5 @@
 
 public class PatchUserDto
 {
-    public int UserRole { get; set; }
+    public string Role { get; set; } = string.Empty;
 }

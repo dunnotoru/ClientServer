@@ -20,12 +20,13 @@ public static class Program
                 .Validate(p => p switch
                 {
                     < 0 => ValidationResult.Error("Invalid port number, must be in range from 0 to 65535"),
-                    > 0 and < 65535 => ValidationResult.Success(),
-                    > 65535 => ValidationResult.Error("Invalid port number, must be in range from 0 to 65535"),
+                    < 65535 => ValidationResult.Success(),
+                    >= 65535 => ValidationResult.Error("Invalid port number, must be in range from 0 to 65535"),
                 }));
         
         AnsiConsole.Clear();
-        ClientController controller = new ClientController(new Base64Encoder(), new UserService(new IPEndPoint(ip!, port)));
+        IPEndPoint endPoint = new IPEndPoint(ip!, port);
+        ClientController controller = new ClientController(new Base64Encoder(), new UserService(endPoint), new NonRandomSongService(endPoint));
         controller.Run();
     }
 }
