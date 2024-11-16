@@ -3,10 +3,10 @@
 public class UserDto
 {
     public string Username { get; set; } = string.Empty;
-    public int UserRole { get; set; }
+    public string Role { get; set; }
 
     public override string ToString()
     {
-        return $"Username: {Username}, " + (UserRole == 0 ? "Role: Admin" : "Role: User");  
+        return $"Username: {Username}, Role: {Role}";
     }
 }

@@ -13,17 +13,18 @@ public class NonRandomSongService(IPEndPoint endpoint) : ISongService
         Timeout = TimeSpan.FromSeconds(15)
     };
     
-    public string GetChorus()
+    public string GetChorus(string basicAuthToken)
     {
         HttpRequestMessage request = new HttpRequestMessage
         {
             Method = HttpMethod.Get,
-            RequestUri = new Uri("/song", UriKind.Relative),
+            RequestUri = new Uri("song", UriKind.Relative),
+            Headers = { { "Authorization", $"Basic {basicAuthToken}" } },
         };
         
         HttpResponseMessage response = _client.Send(request);
         response.EnsureSuccessStatusCode();
-        string? a = response.Content.ReadFromJsonAsync<string>().Result;
+        string? a = response.Content.ReadFromJsonAsync<string>().GetAwaiter().GetResult();
         return a ?? "error";
     }
 }

@@ -102,8 +102,9 @@ public class UserController : ControllerBase
                 Roles = await _userManager.GetRolesAsync(user)
             });
         }
-        
-        return Ok(userDtos);
+
+        return Ok(users.Zip(userDtos, (user, dto) => new { user.Id, dto })
+            .ToDictionary(x => x.Id, x => x.dto));
     }
     
     [Authorize(Policy = "AdminOrOwner", AuthenticationSchemes = BasicAuthenticationDefaults.Scheme)]

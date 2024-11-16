@@ -2,5 +2,5 @@
 
 public interface ISongService
 {
-    string GetChorus();
+    string GetChorus(string basicAuthToken);
 }

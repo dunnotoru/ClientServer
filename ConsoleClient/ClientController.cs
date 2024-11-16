@@ -56,7 +56,7 @@ public class ClientController
                     break;
                 case 5:
                     GetSong();
-                    return;
+                    break;
                 case 6:
                     return;
             }
@@ -68,20 +68,24 @@ public class ClientController
         AnsiConsole.MarkupLine("Authorize");
         Tuple<string, string> input = InputAuthData();
         string basicAuthToken = _base64Encoder.Encode(input.Item1 + ":" + input.Item2);
-        
+
         AnsiConsole.Status()
             .Spinner(Spinner.Known.Dots)
-            .Start("Sending request...", ctx =>
+            .Start("Sending request...", _ =>
             {
                 try
                 {
-                    string chorus = _songService.GetChorus();
-                    AnsiConsole.MarkupLine($"[green]Success![/]");
+                    string chorus = _songService.GetChorus(basicAuthToken);
+                    AnsiConsole.MarkupLine("[green]Success![/]");
                     AnsiConsole.MarkupLine(chorus);
                 }
                 catch (HttpRequestException e)
                 {
-                    AnsiConsole.MarkupLine($"[red]Error! {e.StatusCode}[/]");
+                    Console.WriteLine(e);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
                 }
             });
     }
@@ -164,7 +168,7 @@ public class ClientController
                 }
                 catch (Exception e)
                 {
-                    AnsiConsole.MarkupLine($"[red]Error! {e.Message }[/]");
+                    Console.WriteLine(e.Message);
                 }
             });
     }
