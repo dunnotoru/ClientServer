@@ -121,7 +121,11 @@ public static class Program
                 policy.RequireAuthenticatedUser();
             });
         });
-        
+
+        services.AddHttpClient("Service", client =>
+        {
+            client.BaseAddress = new Uri("http://localhost:5002/api/");
+        });
         services.AddControllers();
         services.AddScoped<IAuthorizationHandler, AdminOrOwnerHandler>();
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();

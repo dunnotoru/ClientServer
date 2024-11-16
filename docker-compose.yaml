@@ -1,0 +1,24 @@
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: identitydb
+      POSTGRES_USER: webapi
+      POSTGRES_PASSWORD: webapi
+      ports:
+        - "5432:5432"
+  webapi:
+    build: ./WebSever/
+    depends_on:
+      - db
+  micro_service:
+    build: ./MicroService/
+  gateway:
+    container_name: nginx
+    build: ./nginx/
+    ports: 
+      - 8000:80
+    depends_on:
+      - db
+      - webapi
+      - micro_service      
