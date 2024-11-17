@@ -5,7 +5,7 @@ builder.WebHost.UseUrls("http://localhost:5002");
 WebApplication app = builder.Build();
 
 string chorus;
-using (StreamReader sr = File.OpenText("./chorus.txt"))
+using (StreamReader sr = File.OpenText("./song.txt"))
 {
     chorus = sr.ReadToEnd();
 }
