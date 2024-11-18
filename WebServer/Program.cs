@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using WebServer.Auth;
@@ -21,8 +20,9 @@ public static class Program
     {
         WebApplicationBuilder builder = 
             WebApplication.CreateBuilder(args);
-        
+
         RegisterServices(builder);
+        builder.Configuration.AddEnvironmentVariables("DB_");
         
         WebApplication app = builder.Build();
 
@@ -30,12 +30,13 @@ public static class Program
         {
             Initialize(scope.ServiceProvider).Wait();
         }
-
+        
         if (app.Environment.IsDevelopment())
         {
             app.UseSwagger();
             app.UseSwaggerUI();
         }
+
 
         app.UseAuthentication();
         app.UseAuthorization();
@@ -131,7 +132,9 @@ public static class Program
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddDbContext<UserDbContext>(options =>
         {
-            options.UseNpgsql(builder.Configuration.GetConnectionString("IdentityConnection"));
+            string connectionString = builder.Configuration.GetConnectionString("IdentityConnection")
+                                      ?? throw new ArgumentException("connection string not found in appsettings.json");
+            options.UseNpgsql(connectionString);
         });
         services.AddIdentity<User, IdentityRole<int>>()
             .AddEntityFrameworkStores<UserDbContext>();

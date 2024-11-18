@@ -7,12 +7,16 @@ services:
       POSTGRES_PASSWORD: webapi
       ports:
         - "5432:5432"
-  webapi:
-    build: ./WebSever/
-    depends_on:
-      - db
   micro_service:
     build: ./MicroService/
+  webapi:
+    build: ./WebSever/
+    environment:
+      ASPNETCORE_USERNAME: webapi
+      ASPNETCORE_PASSWORD: webapi
+    depends_on:
+      - db
+      - micro_service
   gateway:
     container_name: nginx
     build: ./nginx/
