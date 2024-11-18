@@ -1,3 +1,4 @@
+using System.Configuration;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -22,7 +23,6 @@ public static class Program
             WebApplication.CreateBuilder(args);
 
         RegisterServices(builder);
-        builder.Configuration.AddEnvironmentVariables("DB_");
         
         WebApplication app = builder.Build();
 
@@ -125,15 +125,17 @@ public static class Program
 
         services.AddHttpClient("Service", client =>
         {
-            client.BaseAddress = new Uri("http://localhost:5002/api/");
+            string connectionString = builder.Configuration.GetConnectionString("IdentityDatabase") 
+                                      ?? throw new SettingsPropertyNotFoundException("MicroServiceConection");
+            client.BaseAddress = new Uri(connectionString);
         });
         services.AddControllers();
         services.AddScoped<IAuthorizationHandler, AdminOrOwnerHandler>();
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddDbContext<UserDbContext>(options =>
         {
-            string connectionString = builder.Configuration.GetConnectionString("IdentityConnection")
-                                      ?? throw new ArgumentException("connection string not found in appsettings.json");
+            string connectionString = builder.Configuration.GetConnectionString("IdentityDatabase")
+                                      ?? throw new SettingsPropertyNotFoundException("connection string not found in appsettings.json");
             options.UseNpgsql(connectionString);
         });
         services.AddIdentity<User, IdentityRole<int>>()

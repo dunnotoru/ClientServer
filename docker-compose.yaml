@@ -5,15 +5,16 @@ services:
       POSTGRES_DB: identitydb
       POSTGRES_USER: webapi
       POSTGRES_PASSWORD: webapi
-      ports:
-        - "5432:5432"
+    ports:
+      - 5432:5432
   micro_service:
-    build: ./MicroService/
+    build: ./MicroService/.
+    ports:
+      - 5000:5000
   webapi:
-    build: ./WebSever/
-    environment:
-      ASPNETCORE_USERNAME: webapi
-      ASPNETCORE_PASSWORD: webapi
+    build: ./WebServer/.
+    ports:
+      - 5000:5000
     depends_on:
       - db
       - micro_service
@@ -21,7 +22,7 @@ services:
     container_name: nginx
     build: ./nginx/
     ports: 
-      - 8000:80
+      - 80:80
     depends_on:
       - db
       - webapi
