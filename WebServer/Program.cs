@@ -125,8 +125,8 @@ public static class Program
 
         services.AddHttpClient("Service", client =>
         {
-            string connectionString = builder.Configuration.GetConnectionString("IdentityDatabase") 
-                                      ?? throw new SettingsPropertyNotFoundException("MicroServiceConection");
+            string connectionString = builder.Configuration.GetConnectionString("MicroService") 
+                                      ?? throw new SettingsPropertyNotFoundException("service connection string not found in appsettings.json");
             client.BaseAddress = new Uri(connectionString);
         });
         services.AddControllers();
@@ -135,7 +135,7 @@ public static class Program
         services.AddDbContext<UserDbContext>(options =>
         {
             string connectionString = builder.Configuration.GetConnectionString("IdentityDatabase")
-                                      ?? throw new SettingsPropertyNotFoundException("connection string not found in appsettings.json");
+                                      ?? throw new SettingsPropertyNotFoundException("database connection string not found in appsettings.json");
             options.UseNpgsql(connectionString);
         });
         services.AddIdentity<User, IdentityRole<int>>()

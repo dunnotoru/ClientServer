@@ -7,20 +7,8 @@ namespace WebServer.DAL;
 
 public sealed class UserDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
-    private readonly IConfiguration _configuration;
+    public UserDbContext(DbContextOptions<UserDbContext> options) : base(options) { }
     
-    public UserDbContext(IConfiguration configuration, 
-        DbContextOptions optionsBuilder) : base(optionsBuilder)
-    {
-        _configuration = configuration;
-        Database.Migrate();
-    }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder.UseNpgsql(_configuration.GetConnectionString("IdentityConnection"));
-    }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>(builder =>
