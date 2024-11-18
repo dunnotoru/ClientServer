@@ -1,5 +1,6 @@
 services:
   db:
+    container_name: db
     image: postgres:latest
     environment:
       POSTGRES_DB: identitydb
@@ -8,10 +9,12 @@ services:
     ports:
       - 5432:5432
   micro_service:
+    container_name: micro_service
     build: ./MicroService/.
     ports:
       - 5001:5000
   webapi:
+    container_name: webapi
     build: ./WebServer/.
     ports:
       - 5000:5000
@@ -22,7 +25,7 @@ services:
     container_name: nginx
     build: ./nginx/
     ports: 
-      - 80:80
+      - 8000:80
     depends_on:
       - db
       - webapi
