@@ -7,7 +7,10 @@ namespace WebServer.DAL;
 
 public sealed class UserDbContext : IdentityDbContext<User, IdentityRole<int>, int>
 {
-    public UserDbContext(DbContextOptions<UserDbContext> options) : base(options) { }
+    public UserDbContext(DbContextOptions<UserDbContext> options) : base(options)
+    {
+        Database.Migrate();
+    }
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
