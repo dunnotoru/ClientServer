@@ -1,6 +1,6 @@
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5002");
+builder.Configuration.AddEnvironmentVariables();
 
 WebApplication app = builder.Build();
 
