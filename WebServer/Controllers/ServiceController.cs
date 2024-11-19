@@ -20,8 +20,15 @@ public class ServiceController : ControllerBase
     public async Task<IActionResult> GetSong()
     {
         HttpClient client = _httpClientFactory.CreateClient("Service");
-        
-        HttpResponseMessage response = await client.GetAsync("/definitely-not-rickroll");
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.GetAsync("definitely-not-rickroll");
+        }
+        catch (Exception)
+        {
+            return Problem();
+        }
         
         if (!response.IsSuccessStatusCode)
         {

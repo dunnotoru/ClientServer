@@ -6,6 +6,8 @@ services:
       POSTGRES_DB: identitydb
       POSTGRES_USER: webapi
       POSTGRES_PASSWORD: webapi
+    networks:
+      - apinetwork
     ports:
       - 5432:5432
     healthcheck:
@@ -14,18 +16,23 @@ services:
       retries: 5
       start_period: 5s
       timeout: 5s
+
   micro_service:
     container_name: micro_service
     build: ./MicroService/.
     environment:
-      - ASPNETCORE=http://+:5000
+      - ASPNETCORE_URLS=http://+:5000
+    networks:
+      - apinetwork
     ports:
       - 5001:5000
   webapi:
     container_name: webapi
     build: ./WebServer/.
     environment:
-      - ASPNETCORE=http://+:5000
+      - ASPNETCORE_URLS=http://+:5000
+    networks:
+      - apinetwork
     ports:
       - 5000:5000
     depends_on:
@@ -36,9 +43,15 @@ services:
   gateway:
     container_name: nginx
     build: ./nginx/
+    networks:
+      - apinetwork
     ports: 
       - 8000:80
     depends_on:
       - db
       - webapi
-      - micro_service      
+      - micro_service     
+
+networks:
+  apinetwork:
+    driver: bridge
