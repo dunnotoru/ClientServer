@@ -1,8 +1,9 @@
 name: Docker Image CI
 
 on:
-  release:
-    types: [published]
+  push:
+    branches:
+      - master
 
 jobs:
 
@@ -24,12 +25,17 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
         
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ${{ vars.DOCKERHUB_USERNAME }}/aspapp:latest
-      
       - name: run compose
-        run: docker compose up
+        run: docker compose up -d 
+      
+      - name: stop compose
+        run: docker compose down
+
+      - name: push webapi
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/webapi:latest
+
+      - name: push service
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/service:latest
+     
