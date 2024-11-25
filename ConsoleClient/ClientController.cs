@@ -158,8 +158,8 @@ public class ClientController
                     AnsiConsole.MarkupLine("Users:");
                     foreach (KeyValuePair<int, UserDto> idUserPair in users)
                     {
-                        Thread.Sleep(250);
-                        AnsiConsole.MarkupLine($"> {idUserPair.Key} - {idUserPair.Value}");
+                        string u = idUserPair.Value.ToString();
+                        AnsiConsole.MarkupLineInterpolated($"> {idUserPair.Key} - {u}");
                     }
                 }
                 catch (HttpRequestException e)

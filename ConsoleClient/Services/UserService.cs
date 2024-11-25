@@ -45,7 +45,7 @@ public class UserService(IPEndPoint endpoint) : IUserService
 
         HttpResponseMessage response = _client.Send(request);
         response.EnsureSuccessStatusCode();
-        return response.Content.ReadFromJsonAsync<Dictionary<int, UserDto>>().Result ?? new Dictionary<int, UserDto>();
+        return response.Content.ReadFromJsonAsync<Dictionary<int, UserDto>>().GetAwaiter().GetResult() ?? new Dictionary<int, UserDto>();
     }
 
     public UserDto? GetUserById(string basicAuthToken, int userId)
