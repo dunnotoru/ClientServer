@@ -33,11 +33,11 @@ jobs:
 
       - name: push webapi
         run: |
-          docker tag webapi:latest ${{ vars.DOCKERHUB_USERNAME }}/webapi:latest
-          docker image push ${{ vars.DOCKERHUB_USERNAME }}/webapi:latest
+          docker tag clientserver-webapi:latest ${{ vars.DOCKERHUB_USERNAME }}/clientserver-webapi:latest
+          docker image push ${{ vars.DOCKERHUB_USERNAME }}/clientserver-webapi:latest
 
       - name: push service
         run: |
-          docker tag service:latest ${{ vars.DOCKERHUB_USERNAME }}/service:latest
-          docker image push ${{ vars.DOCKERHUB_USERNAME }}/service:latest
+          docker tag clientserver-service:latest ${{ vars.DOCKERHUB_USERNAME }}/clientserver-service:latest
+          docker image push ${{ vars.DOCKERHUB_USERNAME }}/clientserver-service:latest
      
