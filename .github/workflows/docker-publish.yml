@@ -38,6 +38,6 @@ jobs:
 
       - name: push service
         run: |
-          docker tag clientserver-service:latest ${{ vars.DOCKERHUB_USERNAME }}/clientserver-service:latest
-          docker image push ${{ vars.DOCKERHUB_USERNAME }}/clientserver-service:latest
+          docker tag clientserver-micro_service:latest ${{ vars.DOCKERHUB_USERNAME }}/clientserver-micro_service:latest
+          docker image push ${{ vars.DOCKERHUB_USERNAME }}/clientserver-micro_service:latest
      
