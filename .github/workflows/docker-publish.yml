@@ -33,7 +33,7 @@ jobs:
 
       - name: push webapi
         run: |
-          docker tag webapi:latest ${{ secrets.DOCKER_USERNAME }}/webapi:latest |
+          docker tag webapi:latest ${{ secrets.DOCKER_USERNAME }}/webapi:latest
           docker image push ${{ secrets.DOCKER_USERNAME }}/webapi:latest
 
       - name: push service
