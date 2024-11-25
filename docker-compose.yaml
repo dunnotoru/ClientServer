@@ -24,8 +24,8 @@ services:
       - ASPNETCORE_URLS=http://+:5000
     networks:
       - apinetwork
-    ports:
-      - 5001:5000
+    expose:
+      - "5000"
   webapi:
     container_name: webapi
     build: ./WebServer/.
@@ -33,8 +33,8 @@ services:
       - ASPNETCORE_URLS=http://+:5000
     networks:
       - apinetwork
-    ports:
-      - 5000:5000
+    expose:
+      - "5000"
     depends_on:
       db:
         condition: service_healthy
