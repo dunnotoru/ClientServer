@@ -8,8 +8,8 @@ services:
       POSTGRES_PASSWORD: webapi
     networks:
       - apinetwork
-    ports:
-      - 5432:5432
+    expose:
+      - "5432"
     healthcheck:
       test: ["CMD", "pg_isready", "-d", "identitydb", "-U", "webapi"]
       interval: 10s
